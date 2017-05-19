@@ -9,7 +9,8 @@ import java.util.Scanner;
 
 public class TicTacToe {
 
-    final int SIZE = 3;
+    int x, y;
+    final int SIZE = 5;
     final char DOT_X = 'x';
     final char DOT_O = 'o';
     final char DOT_EMPTY = '.';
@@ -22,7 +23,7 @@ public class TicTacToe {
         while (true) {
             humanTurn();
             printMap();
-            if (checkWin(DOT_X)) {
+            if (checkWin(DOT_X, x, y)) {
                 System.out.println("You win!");
                 break;
             }
@@ -30,9 +31,9 @@ public class TicTacToe {
                 System.out.println("Sorry, DRAW!");
                 break;
             }
-            aiTurn();
+            aiTurn(DOT_X, x, y);
             printMap();
-            if (checkWin(DOT_O)) {
+            if (checkWin(DOT_O, x, y)) {
                 System.out.println("You lost!");
                 break;
             }
@@ -43,18 +44,51 @@ public class TicTacToe {
         System.out.println("GAME OVER!");
     }
 
-    private boolean checkWin(char dot) {
-        // gorisontal
-        if (map[0][0] == dot && map[0][1] == dot && map[0][2] == dot)return true;
-        if (map[1][0] == dot && map[1][1] == dot && map[1][2] == dot)return true;
-        if (map[2][0] == dot && map[2][1] == dot && map[2][2] == dot)return true;
-        // vertical
-        if (map[0][0] == dot && map[1][0] == dot && map[2][0] == dot)return true;
-        if (map[0][1] == dot && map[1][1] == dot && map[2][1] == dot)return true;
-        if (map[0][2] == dot && map[1][2] == dot && map[2][2] == dot)return true;
-        // diagonal
-        if (map[0][0] == dot && map[1][1] == dot && map[2][2] == dot)return true;
-        if (map[2][0] == dot && map[1][1] == dot && map[0][2] == dot)return true;
+    private boolean checkWin(char dot, int x, int y) {
+        // Метод поддерживает любое кол-во фишек и полей
+        boolean flag = false;
+        
+        // Диагонали проверяем только если оказались на диагонали
+        if (x == y) {
+            for (int i = 0; i < SIZE; i++) {
+                if (map[i][i] == dot) flag = true;
+                else {
+                    flag = false;
+                    break;
+                }
+            }
+            if (flag) return true;
+        }
+        if (x + y == SIZE - 1) {
+            for (int i = 0; i < SIZE; i++) {
+                if (map[i][(SIZE - 1) - i] == dot) flag = true;
+                else {
+                    flag = false;
+                    break;
+                }
+            }
+            if (flag) return true;
+        }
+        
+        // Проверяем строку
+        for (int i = 0; i < SIZE; i++) {
+            if (map[y][i] == dot) flag = true;
+            else {
+                flag = false;
+                break;
+            }
+        }
+        if (flag) return true;
+
+        // Проверяем столбец
+        for (int i = 0; i < SIZE; i++) {
+            if (map[i][x] == dot) flag = true;
+            else {
+                flag = false;
+                break;
+            }
+        }
+        if (flag) return true;
         return false;
     }
 
@@ -68,19 +102,28 @@ public class TicTacToe {
         System.out.println();
     }
 
-    private void aiTurn() {
-        int x, y;
-        do {
-            x = rand.nextInt(SIZE);
-            y = rand.nextInt(SIZE);
-        } while (!isCellValid(x, y));
-        map[y][x] = DOT_O;
+    private void aiTurn(char dot, int x, int y) {
+        //---------------------------------------------------+
+        // Блок, где ИИ определяет, что юзер вот-вот выиграет:
+        // Сюда сразу попадают координаты предыдущего хода
+        // юзера.
+        boolean isAssInTheFire = checkIsAssInTheFire(dot, x, y);
+
+        //---------------------------------------------------+
+
+
+        if (!isAssInTheFire) {
+            do {
+                x = rand.nextInt(SIZE);
+                y = rand.nextInt(SIZE);
+            } while (!isCellValid(x, y));
+            map[y][x] = DOT_O;
+        }
     }
 
     private void humanTurn() {
-        int x, y;
         do {
-            System.out.println("Enter X and Y (1 - 3):");
+            System.out.println("Enter X and Y (1 - " + SIZE + "):");
             x = sc.nextInt() - 1;
             y = sc.nextInt() - 1;
         } while (!isCellValid(x, y));
@@ -112,5 +155,82 @@ public class TicTacToe {
             }
         }
         return true;
+    }
+
+    public boolean checkIsAssInTheFire(char dot, int x, int y) {
+        boolean flag = false;
+        int count;
+
+        // Диагонали проверяем только если оказались на диагонали
+        if (x == y) {
+            count = 0;
+            for (int i = 0; i < SIZE; i++) {
+                if (map[i][i] == dot) count++;
+            }
+            if (count == SIZE - 1) {
+                for (int i = 0; i < SIZE; i++) {
+                    if (map[i][i] != dot && map[i][i] == DOT_EMPTY) {
+                        x = i;
+                        y = i;
+                        map[y][x] = DOT_O;
+                        return true;
+                    }
+                }
+            }
+        }
+
+        if (x + y == SIZE - 1) {
+            count = 0;
+            for (int i = 0; i < SIZE; i++) {
+                if (map[i][(SIZE - 1) - i] == dot) {
+                    if (map[i][SIZE - 1] == dot) count++;
+                }
+            }
+            if (count == SIZE - 1) {
+                for (int i = 0; i < SIZE; i++) {
+                    if (map[i][(SIZE - 1) - i] != dot && map[i][(SIZE - 1) - i] == DOT_EMPTY) {
+                        x = (SIZE - 1) - i;
+                        y = i;
+                        map[y][x] = DOT_O;
+                        return true;
+                    }
+                }
+            }
+        }
+
+        // Проверяем строку
+        count = 0;
+        for (int i = 0; i < SIZE; i++) {
+            if (map[y][i] == dot) {
+                if (map[y][i] == dot) count++;
+            }
+        }
+        if (count == SIZE - 1) {
+            for (int i = 0; i < SIZE; i++) {
+                if (map[y][i] != dot && map[y][i] == DOT_EMPTY) {
+                    x = i;
+                    map[y][x] = DOT_O;
+                    return true;
+                }
+            }
+        }
+
+        // Проверяем столбец
+        count = 0;
+        for (int i = 0; i < SIZE; i++) {
+            if (map[i][x] == dot) {
+                if (map[i][x] == dot) count++;
+            }
+        }
+        if (count == SIZE - 1) {
+            for (int i = 0; i < SIZE; i++) {
+                if (map[i][x] != dot && map[i][x] == DOT_EMPTY) {
+                    y = i;
+                    map[y][x] = DOT_O;
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 }
